@@ -7,8 +7,20 @@ import fs from 'fs/promises';
 export async function POST(req) {
   try {
     const { keyword, startDate, endDate, sourceType } = await req.json();
+
+    if (!keyword || keyword.trim() === "") {
+      return new NextResponse("Keyword is required", { status: 400 });
+    }
+
     const client_id = process.env.NAVER_CLIENT_ID;
     const client_secret = process.env.NAVER_CLIENT_SECRET;
+    if (!client_id || !client_secret) {
+      console.error("Missing Naver API credentials");
+      return new NextResponse("Server configuration error", { status: 500 });
+    }
+    
+    console.log('Naver client_id:', client_id);
+
     const headers = {
       'X-Naver-Client-Id': client_id,
       'X-Naver-Client-Secret': client_secret,
@@ -19,8 +31,13 @@ export async function POST(req) {
     const searchNaver = async (query, start, display, type) => {
       const encText = encodeURIComponent(query);
       const url = `https://openapi.naver.com/v1/search/${type}.json?query=${encText}&start=${start}&display=${display}`;
-      const response = await axios.get(url, { headers });
-      return response.data;
+      try {
+        const response = await axios.get(url, { headers });
+        return response.data;
+      } catch (error) {
+        console.error("Error in axios.get:", error.response?.data || error.message);
+        throw error;
+      }
     };
 
     const parseItems = (jsonData, keyword, sourceType) => {
@@ -50,6 +67,7 @@ export async function POST(req) {
       }
     }
 
+    // Write CSV to /tmp (writable on Vercel)
     const filename = `${keyword}_${startDate}_${endDate}_${sourceType}.csv`;
     const csvPath = `/tmp/${filename}`;
 
