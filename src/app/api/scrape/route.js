@@ -8,18 +8,19 @@ export async function POST(req) {
   try {
     const { keyword, startDate, endDate, sourceType } = await req.json();
 
-    if (!keyword || keyword.trim() === "") {
-      return new NextResponse("Keyword is required", { status: 400 });
+    if (!keyword || !startDate || !endDate || !sourceType) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     const client_id = process.env.NAVER_CLIENT_ID;
     const client_secret = process.env.NAVER_CLIENT_SECRET;
     if (!client_id || !client_secret) {
-      console.error("Missing Naver API credentials");
-      return new NextResponse("Server configuration error", { status: 500 });
+      console.error('Missing Naver API credentials');
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
     }
-    
+
     console.log('Naver client_id:', client_id);
+    console.log('Naver client_secret:', client_secret);
 
     const headers = {
       'X-Naver-Client-Id': client_id,
@@ -35,7 +36,18 @@ export async function POST(req) {
         const response = await axios.get(url, { headers });
         return response.data;
       } catch (error) {
-        console.error("Error in axios.get:", error.response?.data || error.message);
+        console.error("Error in axios.get:", {
+          message: error.message,
+          response: error.response
+            ? {
+                data: error.response.data,
+                status: error.response.status,
+                headers: error.response.headers,
+              }
+            : null,
+          config: error.config,
+          stack: error.stack,
+        });
         throw error;
       }
     };
@@ -67,10 +79,8 @@ export async function POST(req) {
       }
     }
 
-    // Write CSV to /tmp (writable on Vercel)
     const filename = `${keyword}_${startDate}_${endDate}_${sourceType}.csv`;
     const csvPath = `/tmp/${filename}`;
-
     const csvWriter = createObjectCsvWriter({
       path: csvPath,
       header: [
