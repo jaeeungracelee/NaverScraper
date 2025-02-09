@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server';
 import axios from 'axios';
 import { createObjectCsvWriter } from 'csv-writer';
 
-// Make sure to set these in your environment (.env.local)
 const client_id = process.env.NAVER_CLIENT_ID;
 const client_secret = process.env.NAVER_CLIENT_SECRET;
 

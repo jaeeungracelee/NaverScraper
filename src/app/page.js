@@ -2,17 +2,11 @@
 
 import { useState } from 'react';
 import axios from 'axios';
-
-// Import the named export "FloatingBubbles" from your floatingbubbles.js
 import { FloatingBubbles } from '@/components/floatingbubbles';
-
-// Import shadcn components (adjust import paths as needed)
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-
-// Import the Pacifico font from Google Fonts using Next.js
 import { Pacifico } from 'next/font/google';
 
 const pacifico = Pacifico({
@@ -21,7 +15,6 @@ const pacifico = Pacifico({
   variable: '--font-pacifico',
 });
 
-// A simple Select component that mimics shadcn styling
 const Select = (props) => (
   <select
     {...props}
@@ -29,13 +22,11 @@ const Select = (props) => (
   />
 );
 
-// Utility function for combining class names
 function cn(...classes) {
   return classes.filter(Boolean).join(' ');
 }
 
 export default function Home() {
-  // State and functionality remain unchanged
   const [keyword, setKeyword] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -59,10 +50,8 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-[#030303]">
-      {/* Render the floating bubbles in the background */}
+ 
       <FloatingBubbles />
-
-      {/* Form container on top of the background */}
       <div className="relative z-10 flex items-center justify-center min-h-screen">
         <Card className="w-full max-w-md bg-white/10 backdrop-blur-md border border-white/[0.2] shadow-lg">
           <CardHeader>
