@@ -1,15 +1,14 @@
-// app/api/scrape/route.js
+// src/app/api/scrape/route.js
 import { NextResponse } from 'next/server';
 import axios from 'axios';
 import { createObjectCsvWriter } from 'csv-writer';
-
-const client_id = process.env.NAVER_CLIENT_ID;
-const client_secret = process.env.NAVER_CLIENT_SECRET;
+import fs from 'fs/promises';
 
 export async function POST(req) {
   try {
     const { keyword, startDate, endDate, sourceType } = await req.json();
-
+    const client_id = process.env.NAVER_CLIENT_ID;
+    const client_secret = process.env.NAVER_CLIENT_SECRET;
     const headers = {
       'X-Naver-Client-Id': client_id,
       'X-Naver-Client-Secret': client_secret,
@@ -51,7 +50,9 @@ export async function POST(req) {
       }
     }
 
-    const csvPath = `./public/${keyword}_${startDate}_${endDate}_${sourceType}.csv`;
+    const filename = `${keyword}_${startDate}_${endDate}_${sourceType}.csv`;
+    const csvPath = `/tmp/${filename}`;
+
     const csvWriter = createObjectCsvWriter({
       path: csvPath,
       header: [
@@ -68,12 +69,17 @@ export async function POST(req) {
 
     await csvWriter.writeRecords(results);
 
-    return NextResponse.json({
-      success: true,
-      filePath: `/${keyword}_${startDate}_${endDate}_${sourceType}.csv`,
+    const csvData = await fs.readFile(csvPath, 'utf8');
+
+    return new NextResponse(csvData, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/csv',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+      },
     });
   } catch (error) {
     console.error('Error in scraping:', error);
-    return NextResponse.error();
+    return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
