@@ -75,13 +75,20 @@ export default function Home() {
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-[#030303]">
+    <div className="relative min-h-screen w-full overflow-hidden bg-white">
       <FloatingBubbles />
       <div className="relative z-10 flex items-center justify-center min-h-screen">
-        <Card className="w-full max-w-md bg-white/10 backdrop-blur-md border border-white/[0.2] shadow-lg">
+        <Card className="w-full max-w-md bg-white/10 backdrop-blur-md border border-white/[0.2] shadow-[0_4px_20px_rgba(195,175,227,0.5)]">
           <CardHeader>
-            <CardTitle className={cn("text-center text-xl font-bold text-white", pacifico.className)}>
-              Naver Scraper
+            <CardTitle className="text-center">
+              <span
+                className={cn(
+                  "inline-block mx-4 pb-6 overflow-visible text-4xl sm:text-6xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-purple/90 to-rose-300",
+                  pacifico.className
+                )}
+              >
+                Naver Scraper
+              </span>
             </CardTitle>
           </CardHeader>
           <CardContent>

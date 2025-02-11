@@ -53,8 +53,7 @@ export function FloatingBubbles() {
   );
 }
 
-// Optionally, if you want to keep the full background version with extra text, you can
-// export it as the default. Otherwise, you can remove or update this component.
+// keep full bubble with text
 export default function FloatingBubblesBackground({ title = "Floating Bubbles" }) {
   const words = title.split(" ");
 
