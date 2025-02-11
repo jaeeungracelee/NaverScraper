@@ -6,9 +6,13 @@ import fs from 'fs/promises';
 
 export async function POST(req) {
   try {
-    const { keyword, startDate, endDate, sourceType } = await req.json();
+    const requestBody = await req.json();
+    console.log('Received request:', requestBody);
+
+    const { keyword, startDate, endDate, sourceType } = requestBody;
 
     if (!keyword || !startDate || !endDate || !sourceType) {
+      console.error('Missing required fields');
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -18,10 +22,6 @@ export async function POST(req) {
       console.error('Missing Naver API credentials');
       return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
     }
-
-    console.log('Naver client_id:', client_id);
-    console.log('Naver client_secret:', client_secret);
-
     const headers = {
       'X-Naver-Client-Id': client_id,
       'X-Naver-Client-Secret': client_secret,
@@ -33,7 +33,9 @@ export async function POST(req) {
       const encText = encodeURIComponent(query);
       const url = `https://openapi.naver.com/v1/search/${type}.json?query=${encText}&start=${start}&display=${display}`;
       try {
+        console.log('Making request to Naver API:', url);
         const response = await axios.get(url, { headers });
+        console.log('Naver API response:', response.data);
         return response.data;
       } catch (error) {
         console.error("Error in axios.get:", {
@@ -51,9 +53,10 @@ export async function POST(req) {
         throw error;
       }
     };
-
+    
     const parseItems = (jsonData, keyword, sourceType) => {
       const items = jsonData.items || [];
+      console.log('Parsing items:', items.length);
       return items.map(item => ({
         source: sourceType,
         keyword,
@@ -68,6 +71,7 @@ export async function POST(req) {
 
     let start = 1;
     while (start <= 1000) {
+      console.log('Fetching page:', start);
       const jsonData = await searchNaver(keyword, start, 100, sourceType);
       if (jsonData.items && jsonData.items.length > 0) {
         const parsedItems = parseItems(jsonData, keyword, sourceType);
@@ -81,6 +85,8 @@ export async function POST(req) {
 
     const filename = `${keyword}_${startDate}_${endDate}_${sourceType}.csv`;
     const csvPath = `/tmp/${filename}`;
+    console.log('Writing CSV to:', csvPath);
+
     const csvWriter = createObjectCsvWriter({
       path: csvPath,
       header: [
@@ -96,18 +102,24 @@ export async function POST(req) {
     });
 
     await csvWriter.writeRecords(results);
+    console.log('CSV written successfully');
 
     const csvData = await fs.readFile(csvPath, 'utf8');
+    console.log('CSV read successfully');
 
     return new NextResponse(csvData, {
       status: 200,
       headers: {
         'Content-Type': 'text/csv',
-        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`
       },
     });
   } catch (error) {
-    console.error('Error in scraping:', error);
+    console.error('Error in scraping:', {
+      message: error.message,
+      stack: error.stack,
+      response: error.response?.data,
+    });
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }

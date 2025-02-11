@@ -31,18 +31,44 @@ export default function Home() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [sourceType, setSourceType] = useState('blog');
-  const [filePath, setFilePath] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('/api/scrape', {
-        keyword,
-        startDate,
-        endDate,
-        sourceType,
-      });
-      setFilePath(response.data.filePath);
+      // request the CSV file
+      // tell axios to treat the response as a blob
+      const response = await axios.post(
+        '/api/scrape',
+        { keyword, startDate, endDate, sourceType },
+        { responseType: 'blob' }
+      );
+
+      // make a blob
+      const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8' });
+      // make url for blob
+      const url = window.URL.createObjectURL(blob);
+      // make temp link
+      const link = document.createElement('a');
+      link.href = url;
+
+      // extract the filename from content disposition header
+      const disposition = response.headers['content-disposition'];
+      let filename = 'download.csv';
+      if (disposition && disposition.indexOf('filename*=') !== -1) {
+        const filenameMatch = disposition.match(/filename\*=UTF-8''(.+)/);
+        if (filenameMatch != null && filenameMatch[1]) {
+          filename = decodeURIComponent(filenameMatch[1]);
+        }
+      }
+
+      link.setAttribute('download', filename);
+      // append link to doc
+      document.body.appendChild(link);
+      // trigger the download automatically
+      link.click();
+      // remove the link!
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error scraping data:', error);
     }
@@ -50,7 +76,6 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-[#030303]">
- 
       <FloatingBubbles />
       <div className="relative z-10 flex items-center justify-center min-h-screen">
         <Card className="w-full max-w-md bg-white/10 backdrop-blur-md border border-white/[0.2] shadow-lg">
@@ -115,15 +140,6 @@ export default function Home() {
                 Scrape
               </Button>
             </form>
-            {filePath && (
-              <a
-                href={filePath}
-                download
-                className="block mt-4 text-center text-sm text-blue-300 hover:underline"
-              >
-                Download CSV
-              </a>
-            )}
           </CardContent>
         </Card>
       </div>
