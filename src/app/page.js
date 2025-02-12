@@ -94,7 +94,7 @@ export default function Home() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <Label htmlFor="keyword" className="text-white">
+                <Label htmlFor="keyword" className="text-black">
                   Keyword
                 </Label>
                 <Input
@@ -107,7 +107,7 @@ export default function Home() {
                 />
               </div>
               <div>
-                <Label htmlFor="startDate" className="text-white">
+                <Label htmlFor="startDate" className="text-black">
                   Start Date
                 </Label>
                 <Input
@@ -119,7 +119,7 @@ export default function Home() {
                 />
               </div>
               <div>
-                <Label htmlFor="endDate" className="text-white">
+                <Label htmlFor="endDate" className="text-black">
                   End Date
                 </Label>
                 <Input
@@ -131,7 +131,7 @@ export default function Home() {
                 />
               </div>
               <div>
-                <Label htmlFor="sourceType" className="text-white">
+                <Label htmlFor="sourceType" className="text-black">
                   Source Type
                 </Label>
                 <Select
@@ -141,6 +141,7 @@ export default function Home() {
                 >
                   <option value="blog">Blog</option>
                   <option value="news">News</option>
+                  <option value="all">All Naver</option>
                 </Select>
               </div>
               <Button type="submit" className="w-full">

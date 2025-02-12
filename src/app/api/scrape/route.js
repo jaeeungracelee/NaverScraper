@@ -27,6 +27,8 @@ export async function POST(req) {
       'X-Naver-Client-Secret': client_secret,
     };
 
+    const sourceTypes = sourceType === 'all' ? ['news', 'blog'] : [sourceType];
+
     const results = [];
 
     const searchNaver = async (query, start, display, type) => {
@@ -53,12 +55,12 @@ export async function POST(req) {
         throw error;
       }
     };
-    
-    const parseItems = (jsonData, keyword, sourceType) => {
+
+    const parseItems = (jsonData, keyword, type) => {
       const items = jsonData.items || [];
-      console.log('Parsing items:', items.length);
+      console.log(`Parsing ${items.length} items for source: ${type}`);
       return items.map(item => ({
-        source: sourceType,
+        source: type,
         keyword,
         title: item.title.replace(/<b>|<\/b>/g, ''),
         link: item.link,
@@ -69,21 +71,26 @@ export async function POST(req) {
       }));
     };
 
-    let start = 1;
-    while (start <= 1000) {
-      console.log('Fetching page:', start);
-      const jsonData = await searchNaver(keyword, start, 100, sourceType);
-      if (jsonData.items && jsonData.items.length > 0) {
-        const parsedItems = parseItems(jsonData, keyword, sourceType);
-        results.push(...parsedItems);
-        if (jsonData.items.length < 100) break;
-        start += 100;
-      } else {
-        break;
+    // iterate
+    for (const type of sourceTypes) {
+      let start = 1;
+      while (start <= 1000) {
+        console.log(`Fetching page ${start} for source: ${type}`);
+        const jsonData = await searchNaver(keyword, start, 100, type);
+        if (jsonData.items && jsonData.items.length > 0) {
+          const parsedItems = parseItems(jsonData, keyword, type);
+          results.push(...parsedItems);
+          // less than 100 items means we've reached the end
+          if (jsonData.items.length < 100) break;
+          start += 100;
+        } else {
+          break;
+        }
       }
     }
 
-    const filename = `${keyword}_${startDate}_${endDate}_${sourceType}.csv`;
+    const sourceLabel = sourceTypes.join('_');
+    const filename = `${keyword}_${startDate}_${endDate}_${sourceLabel}.csv`;
     const csvPath = `/tmp/${filename}`;
     console.log('Writing CSV to:', csvPath);
 
