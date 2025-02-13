@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import axios from 'axios';
+import { useRouter } from 'next/navigation';
 import { FloatingBubbles } from '@/components/floatingbubbles';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -31,47 +31,18 @@ export default function Home() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [sourceType, setSourceType] = useState('blog');
+  const router = useRouter();
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    try {
-      // request the CSV file
-      // tell axios to treat the response as a blob
-      const response = await axios.post(
-        '/api/scrape',
-        { keyword, startDate, endDate, sourceType },
-        { responseType: 'blob' }
-      );
-
-      // make a blob
-      const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8' });
-      // make url for blob
-      const url = window.URL.createObjectURL(blob);
-      // make temp link
-      const link = document.createElement('a');
-      link.href = url;
-
-      // extract the filename from content disposition header
-      const disposition = response.headers['content-disposition'];
-      let filename = 'download.csv';
-      if (disposition && disposition.indexOf('filename*=') !== -1) {
-        const filenameMatch = disposition.match(/filename\*=UTF-8''(.+)/);
-        if (filenameMatch != null && filenameMatch[1]) {
-          filename = decodeURIComponent(filenameMatch[1]);
-        }
-      }
-
-      link.setAttribute('download', filename);
-      // append link to doc
-      document.body.appendChild(link);
-      // trigger the download automatically
-      link.click();
-      // remove the link!
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Error scraping data:', error);
-    }
+    // navigate to analysis page with query params
+    const params = new URLSearchParams({
+      keyword,
+      startDate,
+      endDate,
+      sourceType,
+    });
+    router.push(`/analysis?${params.toString()}`);
   };
 
   return (
@@ -145,7 +116,7 @@ export default function Home() {
                 </Select>
               </div>
               <Button type="submit" className="w-full">
-                Scrape
+                Scrape & Analyze
               </Button>
             </form>
           </CardContent>

@@ -1,61 +1,32 @@
-// pages/api/scrape.js
-import axios from 'axios';
+// src/app/api/scrape/route.js
+import { NextResponse } from 'next/server';
 import { createObjectCsvWriter } from 'csv-writer';
+import fs from 'fs/promises';
+import { scrapeData } from '../../../utils/scrapeData';
 
-const client_id = process.env.NAVER_CLIENT_ID;
-const client_secret = process.env.NAVER_CLIENT_SECRET;
-
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', ['POST']);
-    return res.status(405).end(`Method ${req.method} Not Allowed`);
-  }
-
+export async function POST(req) {
   try {
-    const { keyword, startDate, endDate, sourceType } = req.body;
+    const requestBody = await req.json();
+    const { keyword, startDate, endDate, sourceType } = requestBody;
 
-    const headers = {
-      'X-Naver-Client-Id': client_id,
-      'X-Naver-Client-Secret': client_secret,
-    };
-
-    const results = [];
-
-    const searchNaver = async (query, start, display, type) => {
-      const encText = encodeURIComponent(query);
-      const url = `https://openapi.naver.com/v1/search/${type}.json?query=${encText}&start=${start}&display=${display}`;
-      const response = await axios.get(url, { headers });
-      return response.data;
-    };
-
-    const parseItems = (jsonData, keyword, sourceType) => {
-      const items = jsonData.items || [];
-      return items.map(item => ({
-        source: sourceType,
-        keyword,
-        title: item.title.replace(/<b>|<\/b>/g, ''),
-        link: item.link,
-        description: item.description.replace(/<b>|<\/b>/g, ''),
-        author: item.bloggername || item.author || '',
-        author_link: item.bloggerlink || '',
-        date: item.postdate || item.pubDate,
-      }));
-    };
-
-    let start = 1;
-    while (start <= 1000) {
-      const jsonData = await searchNaver(keyword, start, 100, sourceType);
-      if (jsonData.items && jsonData.items.length > 0) {
-        const parsedItems = parseItems(jsonData, keyword, sourceType);
-        results.push(...parsedItems);
-        if (jsonData.items.length < 100) break;
-        start += 100;
-      } else {
-        break;
-      }
+    if (!keyword || !startDate || !endDate || !sourceType) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const csvPath = `./public/${keyword}_${startDate}_${endDate}_${sourceType}.csv`;
+    const client_id = process.env.NAVER_CLIENT_ID;
+    const client_secret = process.env.NAVER_CLIENT_SECRET;
+    if (!client_id || !client_secret) {
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    }
+    const sourceTypes = sourceType === 'all' ? ['news', 'blog'] : [sourceType];
+
+    // Use the shared scraping function
+    const results = await scrapeData({ keyword, sourceTypes, client_id, client_secret });
+
+    const sourceLabel = sourceTypes.join('_');
+    const filename = `${keyword}_${startDate}_${endDate}_${sourceLabel}.csv`;
+    const csvPath = `/tmp/${filename}`;
+
     const csvWriter = createObjectCsvWriter({
       path: csvPath,
       header: [
@@ -71,13 +42,17 @@ export default async function handler(req, res) {
     });
 
     await csvWriter.writeRecords(results);
+    const csvData = await fs.readFile(csvPath, 'utf8');
 
-    return res.status(200).json({
-      success: true,
-      filePath: `/${keyword}_${startDate}_${endDate}_${sourceType}.csv`,
+    return new NextResponse(csvData, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/csv',
+        'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`,
+      },
     });
   } catch (error) {
     console.error('Error in scraping:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
