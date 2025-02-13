@@ -87,7 +87,7 @@ export default function Home() {
                   pacifico.className
                 )}
               >
-                Ashley is COOL
+                Naver Scraper
               </span>
             </CardTitle>
           </CardHeader>
