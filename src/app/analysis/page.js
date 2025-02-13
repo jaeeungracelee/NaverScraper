@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import axios from 'axios';
+import ReactMarkdown from 'react-markdown';
 import { FloatingBubbles } from '@/components/floatingbubbles';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,7 @@ export default function AnalysisPage() {
   const sourceType = searchParams.get('sourceType') || 'blog';
 
   const [analysis, setAnalysis] = useState('');
+  const [sentiment, setSentiment] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -39,7 +41,14 @@ export default function AnalysisPage() {
         endDate,
         sourceType,
       });
-      setAnalysis(response.data.analysis);
+      const analysisText = response.data.analysis;
+      setAnalysis(analysisText);
+
+      // sentiment score (assumes the line contains "감정 점수" followed by a number and a % sign)
+      const sentimentMatch = analysisText.match(/감정 점수.*?(\d+)%/);
+      if (sentimentMatch && sentimentMatch[1]) {
+        setSentiment(parseInt(sentimentMatch[1], 10));
+      }
     } catch (err) {
       console.error('Error fetching analysis:', err);
       setError('Failed to fetch analysis.');
@@ -104,13 +113,28 @@ export default function AnalysisPage() {
           <CardContent>
             {loading && <p>Loading analysis...</p>}
             {error && <p className="text-red-500">{error}</p>}
-            {analysis && (
-              <div className="whitespace-pre-wrap text-black">
-                {analysis}
+
+            {sentiment !== null && (
+              <div className="mt-4">
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={sentiment}
+                  className="w-full"
+                  disabled
+                />
               </div>
             )}
+
+            {analysis && (
+              <div className="mt-4 text-black leading-relaxed">
+                <ReactMarkdown>{analysis}</ReactMarkdown>
+              </div>
+            )}
+
             <Button onClick={handleDownloadCSV} className="mt-4 w-full">
-              Download CSV
+              Download CSV 📥
             </Button>
           </CardContent>
         </Card>
