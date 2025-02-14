@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
@@ -9,17 +9,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Pacifico } from 'next/font/google';
 
+// destruct only the className from the font object to avoid serializing functions
 const pacifico = Pacifico({
   subsets: ['latin'],
   weight: ['400'],
   variable: '--font-pacifico',
 });
+const pacificoClassName = pacifico.className;
 
 function cn(...classes) {
   return classes.filter(Boolean).join(' ');
 }
 
-export default function AnalysisPage() {
+function AnalysisContent() {
   const searchParams = useSearchParams();
   const keyword = searchParams.get('keyword') || '';
   const startDate = searchParams.get('startDate') || '';
@@ -44,7 +46,7 @@ export default function AnalysisPage() {
       const analysisText = response.data.analysis;
       setAnalysis(analysisText);
 
-      // sentiment score (assumes the line contains "감정 점수" followed by a number and a % sign)
+      // get sentiment score (assumes the line contains "감정 점수" followed by a number and a % sign)
       const sentimentMatch = analysisText.match(/감정 점수.*?(\d+)%/);
       if (sentimentMatch && sentimentMatch[1]) {
         setSentiment(parseInt(sentimentMatch[1], 10));
@@ -94,51 +96,59 @@ export default function AnalysisPage() {
   }, []);
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-white">
-      <FloatingBubbles />
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen space-y-6">
-        <Card className="w-full max-w-md bg-white/10 backdrop-blur-md border border-white/[0.2] shadow-[0_4px_20px_rgba(195,175,227,0.5)]">
-          <CardHeader>
-            <CardTitle className="text-center">
-              <span
-                className={cn(
-                  "inline-block mx-4 pb-6 overflow-visible text-4xl sm:text-6xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-purple/90 to-rose-300",
-                  pacifico.className
-                )}
-              >
-                Analysis Results
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading && <p>Loading analysis...</p>}
-            {error && <p className="text-red-500">{error}</p>}
+    <div className="relative z-10 flex flex-col items-center justify-center min-h-screen space-y-6">
+      <Card className="w-full max-w-md bg-white/10 backdrop-blur-md border border-white/[0.2] shadow-[0_4px_20px_rgba(195,175,227,0.5)]">
+        <CardHeader>
+          <CardTitle className="text-center">
+            <span
+              className={cn(
+                "inline-block mx-4 pb-6 overflow-visible text-4xl sm:text-6xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-purple/90 to-rose-300",
+                pacificoClassName
+              )}
+            >
+              Analysis Results
+            </span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading && <p>Loading analysis...</p>}
+          {error && <p className="text-red-500">{error}</p>}
 
-            {sentiment !== null && (
-              <div className="mt-4">
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={sentiment}
-                  className="w-full"
-                  disabled
-                />
-              </div>
-            )}
+          {sentiment !== null && (
+            <div className="mt-4">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={sentiment}
+                className="w-full"
+                disabled
+              />
+            </div>
+          )}
 
-            {analysis && (
-              <div className="mt-4 text-black leading-relaxed">
-                <ReactMarkdown>{analysis}</ReactMarkdown>
-              </div>
-            )}
+          {analysis && (
+            <div className="mt-4 text-black leading-normal">
+              <ReactMarkdown>{analysis}</ReactMarkdown>
+            </div>
+          )}
 
-            <Button onClick={handleDownloadCSV} className="mt-4 w-full">
-              Download CSV 📥
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+          <Button onClick={handleDownloadCSV} className="mt-4 w-full">
+            Download CSV 📥
+          </Button>
+        </CardContent>
+      </Card>
     </div>
+  );
+}
+
+export default function AnalysisPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <div className="relative min-h-screen w-full overflow-hidden bg-white">
+        <FloatingBubbles />
+        <AnalysisContent />
+      </div>
+    </Suspense>
   );
 }
