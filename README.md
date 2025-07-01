@@ -1,12 +1,11 @@
-# NaverScraper
-
-A web application that scrapes and analyzes content from Naver blogs and news articles, providing sentiment analysis using AI.
+<img width="1479" alt="Screenshot 2025-07-01 at 6 13 50 PM" src="https://github.com/user-attachments/assets/84914c74-2174-4ea1-ac32-6d7939db0812" />
 
 ## What is NaverScraper?
 
 NaverScraper is a tool designed to help users gather and analyze content from Naver's blog and news platforms. It allows you to search for specific keywords within a date range and provides AI-powered sentiment analysis of the results.
 
 ## What can it be used for?
+
 
 - **Market Research**: Understand public sentiment about products, brands, or topics
 - **Trend Analysis**: Track how opinions change over time on specific subjects
